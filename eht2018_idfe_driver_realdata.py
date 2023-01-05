@@ -5,8 +5,8 @@ from idfe.utils import *
 
 # define some variables
 imagerlist = ['Comrade', 'smili', 'difmap', 'THEMIS', 'ehtim']
-netcallist = ['netcal', 'nonnetcal']
-sourcelist = ['M87', '3C279']
+netcallist = ['netcal']
+sourcelist = ['M87']
 daylist = ['3644', '3645', '3647']
 caliblist = ['hops', 'casa'] # TODO: set calib status; check with image evaluation team
 bandlist = ['b1', 'b2', 'b3', 'b4']
@@ -81,5 +81,4 @@ for imager in imagerlist:
         netcal = 'netcal'
         source = 'M87'
         inputdir = os.path.join(parentdir, imager, f'{source}real') # set partial inputdir value
-        # TODO: Check with Avery about the dir structure
-
+        # TODO: Check with Avery (Kaj Wiik?) about the dir structure
