@@ -15,7 +15,7 @@ from idfe.utils import *
 
 
 # Define REx-related ring characteristics functions from Yutaro
-def extract_ring_quantities(image, xc=None, yc=None, rmin_search=5, rmax_search=60):
+def extract_ring_quantities(image, xc=None, yc=None, rmin_search=5, rmax_search=50):
     Npa=360
     Nr=2*rmax_search
 
@@ -329,7 +329,7 @@ def runvida(vidascript, filelist, vida_outfile, proc=8, arg1=1, arg2=4, stride=2
 
     # extract fractional central brightness from VIDA output and write to a new file
     if stretch:
-        warn(f"VIDA 'stretch' enabled; not computing fractional central brightness. 'floor' will be stored in place of fc.")
+        info(f"stretch enabled for VIDA")
     else:
         cmd = f'readlink -f {vida_outfile} >filelist'
         info(cmd)
