@@ -6,7 +6,7 @@ from idfe.utils import *
 # define some variables
 imagerlist = ['Comrade', 'smili', 'difmap', 'THEMIS', 'ehtim']
 netcallist = ['netcal']
-modellist = ['cres000', 'cres090', 'cres180', 'cres270', 'dblsrc', 'disk', 'edisk', 'point+disk', 'point_edisk', 'ring']
+modellist = ['ecres000', 'ecres045', 'ecres090', 'ecres315', 'grmhd']
 daylist = ['3644', '3645', '3647']
 calib = 'hops' # TODO: set calib status; check with image evaluation team
 bandlist = ['b1', 'b2', 'b3', 'b4']
