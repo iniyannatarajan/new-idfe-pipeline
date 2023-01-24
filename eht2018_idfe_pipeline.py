@@ -44,7 +44,7 @@ def create_parser():
     p.add_argument('--isclean', action='store_true', help='Specify if the image is from CLEAN')
     p.add_argument('-b', '--beaminuas', type=float, default=20, help='Beamsize for blurring CLEAN images in uas')
     p.add_argument('-v', '--vida', type=str, required=True, help='VIDA script to be used')
-    p.add_argument('-t', '--template', nargs='+', type=int, required=True, help='VIDA template parameters')
+    p.add_argument('-t', '--template', type=str, required=True, help='VIDA template name as dictated by the vida script being used')
     p.add_argument('-s', '--stride', type=int, default=200, help='Number of images after which to checkpoint')
     p.add_argument('-m', '--model', type=str, default='FLOOR', choices=['FLOOR', 'GFLOOR'], help='VIDA floor model')
     p.add_argument('--stretch', action='store_true', help='Turn ellipticity on; without this the ring will be assumed circular')
@@ -56,24 +56,10 @@ def create_parser():
 def main(args):
 
   # define some REx and VIDA related variables
-  varg1 = args.template[0]
-  varg2 = args.template[1]
   rex_outfile = f'{args.dataset}_REx.h5'
-  vida_outfile = f'{args.dataset}_VIDA_template{varg1}{varg2}.csv'
+  vida_outfile = f'{args.dataset}_VIDA_{args.template}.csv'
 
-  '''if args.execmode in ['all', 'metron', 'idfe']:
-
-    ##### Read in FITS images #####
-   
-    dirname = args.inputdir.split('/')[-1]
-    filelist = dirname+'.filelist'
-
-    info(f'Creating list of input FITS images...')
-    createlistcmd = f"readlink -f {args.inputdir}/*.fits >{filelist}"
-    info(createlistcmd)
-    os.system(createlistcmd)
-
-    ## TODO:: if execmode is all or idfe, create a new filelist as replacement for args.dataset for the calls to REx and VIDA.'''
+    ## TODO:: if execmode is all or idfe, create a new filelist as replacement for args.dataset for the calls to REx and VIDA.
     
   ##########################################################
   # Image domain feature extraction using REx and VIDA
@@ -83,7 +69,7 @@ def main(args):
     runrex(args.filelist, args.dataset, rex_outfile, args.isclean, proc=args.proc, beaminuas=args.beaminuas)
     
     info(f'Performing IDFE using VIDA...')
-    runvida(args.vida, args.filelist, vida_outfile, proc=args.proc, arg1=varg1, arg2=varg2, stride=args.stride, stretch=args.stretch, restart=args.restart, model=args.model)
+    runvida(args.vida, args.filelist, vida_outfile, proc=args.proc, template=args.template, stride=args.stride, stretch=args.stretch, restart=args.restart, model=args.model)
 
   #############################################################
   # Aggregate results, save output arrays and generate plots
@@ -124,7 +110,11 @@ def main(args):
     vida_pars[:,0] = np.array(vida_allpars[1:,0].astype(float)) # radius
     vida_pars[:,2] = 2*np.sqrt(2*np.log(2))*vida_allpars[1:,1].astype(float) # convert sigma to ring width
 
-    if varg1 == 0:
+    # extract m-ring template parameters
+    # TODO: extract double source parameters
+    varg1 = args.template.split('_')[1]
+
+    if varg1 == '0':
         vida_pars[:,1] = np.rad2deg(np.pi/2 - np.array(vida_allpars[1:,6].astype(float))) # position angle
         if args.stretch:
             vida_pars[:,3] = vida_allpars[1:,10].astype(float) # floor; NOT converted to fractional central brightness
@@ -132,7 +122,7 @@ def main(args):
             vida_pars[:,3] = vida_allpars[1:,16].astype(float) # fractional central brightness
         vida_pars[:,4] = vida_allpars[1:,2].astype(float)/2. # brightness asymmetry (divide by 2 to match REx convention)
 
-    elif varg1 == 1:
+    elif varg1 == '1':
         vida_pars[:,1] = np.rad2deg(np.pi/2 - np.array(vida_allpars[1:,8].astype(float))) # position angle
         if args.stretch:
             vida_pars[:,3] = vida_allpars[1:,12].astype(float) # floor; NOT converted to fractional central brightness

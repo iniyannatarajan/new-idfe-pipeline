@@ -312,15 +312,13 @@ def runrex(filelist, label, rex_outfile, isclean, proc=8, beaminuas=20, frac=1.0
     info(f'REx output saved to {rex_outfile}')
 
 
-def runvida(vidascript, filelist, vida_outfile, proc=8, arg1=1, arg2=4, stride=200, stretch=False, restart=False, model='FLOOR'):
+def runvida(vidascript, filelist, vida_outfile, proc=8, template='mring_1_4', stride=200, stretch=False, restart=False, model='FLOOR'):
     '''
     Perform IDFE using VIDA
     '''
 
-    runvidacmd = f'julia -p {proc} {vidascript} {filelist} --out {vida_outfile} --template {arg1} {arg2} --stride {stride}'
+    runvidacmd = f'julia -p {proc} {vidascript} {filelist} --out {vida_outfile} --template {template} --stride {stride}'
 
-    if stretch:
-      runvidacmd += ' --stretch'
     if restart:
       runvidacmd += ' --restart'
 

@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from idfe.utils import *
 
 # define some variables
-imagerlist =  ['difmap'] #['Comrade', 'smili', 'difmap', 'THEMIS', 'ehtim']
+imagerlist =  ['Comrade', 'smili', 'difmap', 'THEMIS', 'ehtim']
 netcallist = ['netcal']
 modellist = ['cres000', 'cres090', 'cres180', 'cres270', 'dblsrc', 'disk', 'edisk', 'point+disk', 'point_edisk', 'ring']
 daylist = ['3644', '3645', '3647']
@@ -18,33 +18,32 @@ themisbandlist = ['b1b2', 'b3b4', 'b1b2b3b4'] # combined band list for themis
 parentdir = '/n/holylfs05/LABS/bhi/Lab/doeleman_lab/inatarajan/EHT2018_M87_IDFE'
 topsetparent = '/n/holylfs05/LABS/bhi/Lab/doeleman_lab/inatarajan/EHT2018_M87_IDFE/topset'
 pipeline = 'eht2018_idfe_pipeline.py' # name of pipeline script in the current directory
-vidascript = '/n/holylfs05/LABS/bhi/Lab/doeleman_lab/inatarajan/EHT2018_M87_IDFE/software/eht2018-idfe-pipeline/idfe/vida_LS_stretched_mring.jl' # vida script to run
+vidascript = '/n/holylfs05/LABS/bhi/Lab/doeleman_lab/inatarajan/EHT2018_M87_IDFE/software/eht2018-idfe-pipeline/idfe/vida_LS_general.jl' # vida script to run
 
 execmode = 'idfe' # perform idfe and plotting
 beaminuas = 20 # beamise for CLEAN blurring in uas
 
 nproc = 48 # number of processes; must not exceed the number of physical cores available
-varg1 = 1 # template parameter N
-varg2 = 4 # template parameter M
+template = {'dblsrc':'gauss_2', 'others_stretch': 'stretchmring_1_4', 'others_nostretch': 'mring_1_4'}
 stride = 200 # checkpointing interval for VIDA
 stretch = True # NB: must be always set to True for M87!!!
 restart = False
 
-def execute(pipeline, nproc, filelist, dataset_label, beaminuas, vidascript, varg1, varg2, execmode, stride, stretch, restart, imager):
+def execute(pipeline, nproc, filelist, dataset_label, beaminuas, vidascript, template, execmode, stride, stretch, restart, imager):
     """ execute pipeline"""
 
-    command = f"python {pipeline} -p {nproc} -i {filelist} -d {dataset_label} -b {beaminuas} -v {vidascript} -t {varg1} {varg2} -e {execmode} -s {stride} "
+    command = f"python {pipeline} -p {nproc} -i {filelist} -d {dataset_label} -b {beaminuas} -v {vidascript} -t {template} -e {execmode} -s {stride} "
     if stretch: # for vida
         command += '--stretch '
     if restart:
         command += '--restart '
     if imager == 'difmap':
-        command += '--isdifmap '
+        command += '--isclean '
     if imager == 'ehtim':
         command += '--isehtim '
     info(command)
     os.system(command)
-    os.system(f'mv {os.path.basename(inputdir)}.filelist {dataset_label}.filelist') # TODO: this is how the pipeline script names filelist; change it there!!!
+    #os.system(f'mv {os.path.basename(inputdir)}.filelist {dataset_label}.filelist') # TODO: this is how the pipeline script names filelist; change it there!!!
 
     return
 
@@ -66,8 +65,15 @@ for imager in imagerlist:
                             createlistcmd = f"readlink -f {inputdir}/*.fits >{filelist}"
                             info(createlistcmd)
                             os.system(createlistcmd)
-
-                            execute(pipeline, nproc, filelist, dataset_label, beaminuas, vidascript, varg1, varg2, execmode, stride, stretch, restart, imager)
+                           
+                            # execute pipeline
+                            if model != 'dblsrc':
+                                if stretch:
+                                    execute(pipeline, nproc, filelist, dataset_label, beaminuas, vidascript, template['others_stretch'], execmode, stride, stretch, restart, imager)
+                                else:
+                                    execute(pipeline, nproc, filelist, dataset_label, beaminuas, vidascript, template['others_nostretch'], execmode, stride, stretch, restart, imager)
+                            else:
+                                execute(pipeline, nproc, filelist, dataset_label, beaminuas, vidascript, template['dblsrc'], execmode, stride, stretch, restart, imager)
                         else:
                             warn(f'{inputdir} does not exist! Skipping...')                            
 
@@ -78,7 +84,7 @@ for imager in imagerlist:
                 if imager == 'smili': bands = bandlist + smilibandlist
                 else: bands = bandlist
                 for band in bands:
-                    # TODO: choose topset images -- either pass this filename or create a filelist and pass its name to the pipeline
+                    # TODO: choose topset images -- create a filelist with topset images and pass its name to the pipeline
                     if imager == 'smili':
                         topsetfile = os.path.join(topsetparent, imager.upper(), f'topset_{calib}_{day}_{band}.csv')
                     elif imager == 'difmap':
@@ -106,9 +112,7 @@ for imager in imagerlist:
                             for idval in topsetids:
                                 if imager == 'ehtim':
                                     filelist.append(os.path.join(inputdir, f'{model}_{day}_hops-{band}_{idval:07}.fits') + '\n')
-                                elif imager == 'difmap':
-                                    filelist.append(os.path.join(inputdir, f'{model}_{day}_{band}_{idval:07}.fits') + '\n')
-                                elif imager == 'smili':
+                                else:
                                     filelist.append(os.path.join(inputdir, f'{model}_{day}_{band}_{idval:06}.fits') + '\n')
 
                             filelistname = f"{dataset_label}.filelist"
@@ -116,6 +120,12 @@ for imager in imagerlist:
                                 f.writelines(filelist)
 
                             # execute pipeline
-                            execute(pipeline, nproc, filelistname, dataset_label, beaminuas, vidascript, varg1, varg2, execmode, stride, stretch, restart, imager)
+                            if model != 'dblsrc':
+                                if stretch:
+                                    execute(pipeline, nproc, filelistname, dataset_label, beaminuas, vidascript, template['others_stretch'], execmode, stride, stretch, restart, imager)
+                                else:
+                                    execute(pipeline, nproc, filelistname, dataset_label, beaminuas, vidascript, template['others_nostretch'], execmode, stride, stretch, restart, imager)
+                            else:
+                                execute(pipeline, nproc, filelistname, dataset_label, beaminuas, vidascript, template['dblsrc'], execmode, stride, stretch, restart, imager)
                     else:
                         warn(f'{inputdir} does not exist! Skipping...')
