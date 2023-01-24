@@ -1,6 +1,7 @@
 using Pkg
 Pkg.activate(@__DIR__)
 Pkg.instantiate()
+using Distributed
 @everywhere begin
     using Pkg; Pkg.activate(@__DIR__)
 end
