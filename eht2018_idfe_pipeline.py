@@ -17,7 +17,7 @@ import argparse
 import ehtim as eh
 import pandas as pd
 
-from idfe.clustering import *
+#from idfe.clustering import *
 from idfe.idfealg import *
 from idfe.plotting import *
 
@@ -35,7 +35,7 @@ npars = len(outparlist)
 def create_parser():
     p = argparse.ArgumentParser()
     p.add_argument('-p', '--proc', type=int, default=2, help='Number of processors to use')
-    p.add_argument('-i', '--inputdir', type=str, required=True, help='Input directory containing FITS images')
+    p.add_argument('-i', '--filelist', type=str, required=True, help='File containing list of FITS files on which to perform IDFE')
     p.add_argument('-d', '--dataset', type=str, required=True, help='Dataset name for suffixing column names from the HDF5 REx output')
     p.add_argument('--isehtim', action='store_true', help='Specify if the image is from eht-imaging')
     p.add_argument('-ng', '--ngrid', type=int, default=16, help='Number of grids to divide the image into during metronization')
@@ -61,7 +61,7 @@ def main(args):
   rex_outfile = f'{args.dataset}_REx.h5'
   vida_outfile = f'{args.dataset}_VIDA_template{varg1}{varg2}.csv'
 
-  if args.execmode in ['all', 'metron', 'idfe']:
+  '''if args.execmode in ['all', 'metron', 'idfe']:
 
     ##### Read in FITS images #####
    
@@ -73,26 +73,17 @@ def main(args):
     info(createlistcmd)
     os.system(createlistcmd)
 
-    ######################################
-    # Clustering (metronization etc.)
-    
-    '''metron_res = run_metronization(filelist, ngrid=args.ngrid, plength=args.plength, hlength=args.hlength, proc=args.proc, isehtim=args.isehtim)
-    with open('metron.json', 'w') as jsonfile:
-        json.dump(metron_res, jsonfile)
-
-    info(f'Metronization output saved to metron.json')'''
-
-    ## TODO:: if execmode is all or idfe, create a new filelist as replacement for args.dataset for the calls to REx and VIDA.
+    ## TODO:: if execmode is all or idfe, create a new filelist as replacement for args.dataset for the calls to REx and VIDA.'''
     
   ##########################################################
   # Image domain feature extraction using REx and VIDA
   if args.execmode in ['all', 'idfe']:
         
     info(f'Performing IDFE using REx...')
-    runrex(filelist, args.dataset, rex_outfile, args.isclean, proc=args.proc, beaminuas=args.beaminuas)
+    runrex(args.filelist, args.dataset, rex_outfile, args.isclean, proc=args.proc, beaminuas=args.beaminuas)
     
     info(f'Performing IDFE using VIDA...')
-    runvida(args.vida, filelist, vida_outfile, proc=args.proc, arg1=varg1, arg2=varg2, stride=args.stride, stretch=args.stretch, restart=args.restart, model=args.model)
+    runvida(args.vida, args.filelist, vida_outfile, proc=args.proc, arg1=varg1, arg2=varg2, stride=args.stride, stretch=args.stretch, restart=args.restart, model=args.model)
 
   #############################################################
   # Aggregate results, save output arrays and generate plots
