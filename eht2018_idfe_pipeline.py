@@ -63,11 +63,10 @@ def main(args):
     
   ##########################################################
   # Image domain feature extraction using REx and VIDA
-  if args.execmode in ['all', 'idfe']:
-        
+  if args.execmode in ['idfe', 'onlyrex']:
     info(f'Performing IDFE using REx...')
     runrex(args.filelist, args.dataset, rex_outfile, args.isclean, proc=args.proc, beaminuas=args.beaminuas)
-    
+  if args.execmode in ['idfe', 'onlyvida']:
     info(f'Performing IDFE using VIDA...')
     runvida(args.vida, args.filelist, vida_outfile, proc=args.proc, template=args.template, stride=args.stride, stretch=args.stretch, restart=args.restart, model=args.model)
 

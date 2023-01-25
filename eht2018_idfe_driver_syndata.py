@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from idfe.utils import *
 
 # define some variables
-imagerlist =  ['Comrade', 'smili', 'difmap', 'THEMIS', 'ehtim']
+imagerlist =  ['Comrade', 'smili', 'difmap', 'difmap_geofit', 'THEMIS', 'ehtim']
 netcallist = ['netcal']
 modellist = ['cres000', 'cres090', 'cres180', 'cres270', 'dblsrc', 'disk', 'edisk', 'point+disk', 'point_edisk', 'ring']
 daylist = ['3644', '3645', '3647']
@@ -77,7 +77,7 @@ for imager in imagerlist:
                         else:
                             warn(f'{inputdir} does not exist! Skipping...')                            
 
-    elif imager in ['smili', 'ehtim', 'difmap']:
+    elif imager in ['smili', 'ehtim', 'difmap', 'difmap_geofit']:
         netcal = 'netcal' # TODO: set netcal status; check with image evaluation team
         for model in modellist:
             for day in daylist:
@@ -89,8 +89,10 @@ for imager in imagerlist:
                         topsetfile = os.path.join(topsetparent, imager.upper(), f'topset_{calib}_{day}_{band}.csv')
                     elif imager == 'difmap':
                         topsetfile = os.path.join(topsetparent, 'CLEAN', f'topset_{calib}_{day}_{band}.csv')
-                    else:
-                        topsetfile = os.path.join(topsetparent, imager, f'topset_{calib}_{day}_{band}.csv')
+                    elif imager == 'difmap_geofit':
+                        topsetfile = os.path.join(topsetparent, 'CLEAN_geofit', f'topset_{calib}_{day}_{band}.csv')
+                    elif imager == 'ehtim':
+                        topsetfile = os.path.join(topsetparent, 'ehtim_new_202301', f'topset_{calib}_{day}_{band}.csv')
                     if os.path.isfile(topsetfile):
                         df = pd.read_csv(topsetfile)
                         topsetids = np.array(df['id'])
@@ -99,6 +101,7 @@ for imager in imagerlist:
 
                     # deduce dataset path and pass on to the pipeline                    
                     if imager == 'ehtim': inputdir = os.path.join(parentdir, imager, f'{model}_{day}_{calib}-{band}')
+                    elif imager == 'difmap_geofit': inputdir = os.path.join(parentdir, 'difmap', f'{model}_{day}_{band}_geofit')
                     else: inputdir = os.path.join(parentdir, imager, f'{model}_{day}_{band}')
 
                     # if image evaluation has been done for this particular dataset, proceed with execution; otherwise skip directory (TODO: verify with others if skipping is the right thing!)
@@ -112,6 +115,8 @@ for imager in imagerlist:
                             for idval in topsetids:
                                 if imager == 'ehtim':
                                     filelist.append(os.path.join(inputdir, f'{model}_{day}_hops-{band}_{idval:07}.fits') + '\n')
+                                elif imager == 'difmap_geofit':
+                                    filelist.append(os.path.join(inputdir, f'{model}_{day}_{band}_geofit_{idval:06}.fits') + '\n')
                                 else:
                                     filelist.append(os.path.join(inputdir, f'{model}_{day}_{band}_{idval:06}.fits') + '\n')
 
@@ -119,8 +124,9 @@ for imager in imagerlist:
                             with open(filelistname, 'w') as f:
                                 f.writelines(filelist)
 
-                            # execute pipeline
+                            # execute pipeline TODO: dblsrc - get ring params from REx and VIDA or get dblsrc params only from VIDA?
                             if model != 'dblsrc':
+                                execmode = 'onlyvida'
                                 if stretch:
                                     execute(pipeline, nproc, filelistname, dataset_label, beaminuas, vidascript, template['others_stretch'], execmode, stride, stretch, restart, imager)
                                 else:
