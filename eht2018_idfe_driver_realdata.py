@@ -4,45 +4,47 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from idfe.utils import *
+from idfe.idfealg import *
 
 # define some variables
-imagerlist =  ['Comrade', 'smili', 'difmap', 'THEMIS', 'ehtim']
+imagerlist =  ['Comrade', 'smili', 'difmap'] # 'THEMIS' and 'ehtim' not finalised yet; 'difmap_geofit' low priority
 netcallist = ['netcal']
-daylist = ['3644', '3645', '3647']
-caliblist = ['hops', 'casa'] # TODO: set calib status; check with image evaluation team
+daylist = ['3644'] # '3647' later
+caliblist = ['hops', 'casa'] # only hops for the synthetic data
 bandlist = ['b1', 'b2', 'b3', 'b4']
-smilibandlist = ['b1+2', 'b3+4', 'b1+2+3+4'] # combined band list for smili
-themisbandlist = ['b1b2', 'b3b4', 'b1b2b3b4'] # combined band list for themis
+smilibandlist = ['b1+2', 'b3+4'] # 'b1+2+3+4' low priority
+themisbandlist = ['b1b2', 'b3b4'] # 'b1b2b3b4' low priority
 
 parentdir = '/n/holylfs05/LABS/bhi/Lab/doeleman_lab/inatarajan/EHT2018_M87_IDFE'
 topsetparent = '/n/holylfs05/LABS/bhi/Lab/doeleman_lab/inatarajan/EHT2018_M87_IDFE/topset'
 pipeline = 'eht2018_idfe_pipeline.py' # name of pipeline script in the current directory
 vidascript = '/n/holylfs05/LABS/bhi/Lab/doeleman_lab/inatarajan/EHT2018_M87_IDFE/software/eht2018-idfe-pipeline/idfe/vida_LS_general.jl' # vida script to run
 
-execmode = 'idfe' # perform idfe and plotting
-beaminuas = 20 # beamise for CLEAN blurring in uas
-
+beaminuas = 20 # beamsize for CLEAN blurring in uas
 nproc = 48 # number of processes; must not exceed the number of physical cores available
-template = {'stretch': 'stretchmring_1_4', 'nostretch': 'mring_1_4'}
+# vida template dict
+template = {'stretch': 'stretchmring_1_4', 'nostretch': 'mring_1_4'} 
 stride = 200 # checkpointing interval for VIDA
 stretch = True # NB: must be always set to True for M87!!!
 restart = False
 
-def execute(pipeline, nproc, filelist, dataset_label, beaminuas, vidascript, template, execmode, stride, stretch, restart, imager):
-    """ execute pipeline"""
+def execute(filelist, dataset_label, template, execmode, imager):
+    """ execute pipeline """
 
-    command = f"python {pipeline} -p {nproc} -i {filelist} -d {dataset_label} -b {beaminuas} -v {vidascript} -t {template} -e {execmode} -s {stride} "
-    if stretch: # for vida
-        command += '--stretch '
-    if restart:
-        command += '--restart '
-    if imager == 'difmap':
-        command += '--isclean '
-    if imager == 'ehtim':
-        command += '--isehtim '
-    info(command)
-    os.system(command)
-    #os.system(f'mv {os.path.basename(inputdir)}.filelist {dataset_label}.filelist') # TODO: this is how the pipeline script names filelist; change it there!!!
+    rex_outfile = f'{dataset_label}_REx.h5'
+    vida_outfile = f'{dataset_label}_VIDA_{template}.csv'
+
+    if imager in ['difmap', 'difmap_geofit']: isclean = True
+    else: isclean = False
+
+    if execmode in ['both', 'rex']:
+        info('Running REx...')
+        runrex(filelist, dataset_label, rex_outfile, isclean, proc=proc, beaminuas=beaminuas)
+
+    if execmode in ['both', 'vida']:
+        # TODO: blur CLEAN images for VIDA? isclean not input to runvida()
+        info('Running VIDA...')
+        runvida(vidascript, filelist, vida_outfile, proc=proc, template=template, stride=stride, stretch=stretch, restart=restart)
 
     return
 
@@ -66,27 +68,39 @@ for imager in imagerlist:
                             os.system(createlistcmd)
                            
                             # execute pipeline
-                            if stretch:
-                                execute(pipeline, nproc, filelist, dataset_label, beaminuas, vidascript, template['stretch'], execmode, stride, stretch, restart, imager)
+                            if model == 'dblsrc':
+                                # run 2 Guassian model
+                                execute(filelist, dataset_label, template['dblsrc'], 'vida', imager)
+                            elif 'disk' in model:
+                                if stretch:
+                                    execute(filelist, dataset_label, template['disk_stretch'], 'vida', imager)
+                                else:
+                                    execute(filelist, dataset_label, template['disk_nostretch'], 'vida', imager)
                             else:
-                                execute(pipeline, nproc, filelist, dataset_label, beaminuas, vidascript, template['nostretch'], execmode, stride, stretch, restart, imager)
+                                if stretch:
+                                    execute(filelist, dataset_label, template['others_stretch'], 'both', imager)
+                                else:
+                                    execute(filelist, dataset_label, template['others_nostretch'], 'both', imager)
                         else:
                             warn(f'{inputdir} does not exist! Skipping...')                            
 
-    elif imager in ['smili', 'ehtim', 'difmap']:
+    elif imager in ['smili', 'ehtim', 'difmap', 'difmap_geofit']:
         netcal = 'netcal' # TODO: set netcal status; check with image evaluation team
         for calib in caliblist:
             for day in daylist:
                 if imager == 'smili': bands = bandlist + smilibandlist
                 else: bands = bandlist
                 for band in bands:
-                    # TODO: choose topset images -- create a filelist with topset images and pass its name to the pipeline
+                    # choose topset images -- create a filelist with topset images and pass its name to the pipeline
                     if imager == 'smili':
                         topsetfile = os.path.join(topsetparent, imager.upper(), f'topset_{calib}_{day}_{band}.csv')
                     elif imager == 'difmap':
                         topsetfile = os.path.join(topsetparent, 'CLEAN', f'topset_{calib}_{day}_{band}.csv')
-                    else:
-                        topsetfile = os.path.join(topsetparent, imager, f'topset_{calib}_{day}_{band}.csv')
+                    elif imager == 'difmap_geofit':
+                        topsetfile = os.path.join(topsetparent, 'CLEAN_geofit', f'topset_{calib}_{day}_{band}.csv')
+                    elif imager == 'ehtim':
+                        topsetfile = os.path.join(topsetparent, 'ehtim_new_202301', f'topset_{calib}_{day}_{band}.csv')
+
                     if os.path.isfile(topsetfile):
                         df = pd.read_csv(topsetfile)
                         topsetids = np.array(df['id'])
@@ -94,9 +108,11 @@ for imager in imagerlist:
                         topsetids = np.array([])
 
                     # deduce dataset path and pass on to the pipeline                    
-                    inputdir = os.path.join(parentdir, imager, f'{calib}_{day}_{band}')
+                    if imager == 'ehtim': inputdir = os.path.join(parentdir, imager, f'{calib}_{day}_{band}')
+                    elif imager == 'difmap_geofit': inputdir = os.path.join(parentdir, 'difmap', f'{calib}_{day}_{band}_geofit')
+                    else: inputdir = os.path.join(parentdir, imager, f'{calib}_{day}_{band}')
 
-                    # if image evaluation has been done for this particular dataset, proceed with execution; otherwise skip directory (TODO: verify with others if skipping is the right thing!)
+                    # if image evaluation has been done for this particular dataset, proceed with execution; otherwise skip directory
                     if os.path.isdir(inputdir):
                         dataset_label = f'{imager}_{netcal}_{calib}_{day}_{band}'
                         if topsetids.shape[0] == 0:
@@ -107,6 +123,8 @@ for imager in imagerlist:
                             for idval in topsetids:
                                 if imager == 'ehtim':
                                     filelist.append(os.path.join(inputdir, f'{calib}_{day}_{band}_{idval:07}.fits') + '\n')
+                                elif imager == 'difmap_geofit':
+                                    filelist.append(os.path.join(inputdir, f'{calib}_{day}_{band}_geofit_{idval:06}.fits') + '\n')
                                 else:
                                     filelist.append(os.path.join(inputdir, f'{calib}_{day}_{band}_{idval:06}.fits') + '\n')
 
@@ -115,9 +133,19 @@ for imager in imagerlist:
                                 f.writelines(filelist)
 
                             # execute pipeline
-                            if stretch:
-                                execute(pipeline, nproc, filelistname, dataset_label, beaminuas, vidascript, template['stretch'], execmode, stride, stretch, restart, imager)
+                            if model == 'dblsrc':
+                                # run 2 Guassian model
+                                execute(filelistname, dataset_label, template['dblsrc'], 'vida', imager)
+                            elif 'disk' in model:
+                                if stretch:
+                                    execute(filelistname, dataset_label, template['disk_stretch'], 'vida', imager)
+                                else:
+                                    execute(filelistname, dataset_label, template['disk_nostretch'], 'vida', imager)
                             else:
-                                execute(pipeline, nproc, filelistname, dataset_label, beaminuas, vidascript, template['nostretch'], execmode, stride, stretch, restart, imager)
+                                if stretch:
+                                    execute(filelistname, dataset_label, template['others_stretch'], 'both', imager)
+                                else:
+                                    execute(filelistname, dataset_label, template['others_nostretch'], 'both', imager)
+
                     else:
                         warn(f'{inputdir} does not exist! Skipping...')
