@@ -18,13 +18,12 @@ themisbandlist = ['b1b2', 'b3b4'] # 'b1b2b3b4' low priority
 
 parentdir = '/n/holylfs05/LABS/bhi/Lab/doeleman_lab/inatarajan/EHT2018_M87_IDFE'
 topsetparent = '/n/holylfs05/LABS/bhi/Lab/doeleman_lab/inatarajan/EHT2018_M87_IDFE/topset'
-pipeline = 'eht2018_idfe_pipeline.py' # name of pipeline script in the current directory
 vidascript = '/n/holylfs05/LABS/bhi/Lab/doeleman_lab/inatarajan/EHT2018_M87_IDFE/software/eht2018-idfe-pipeline/idfe/vida_LS_general.jl' # vida script to run
 
 execmode = 'idfe' # perform idfe and plotting
 beaminuas = 20 # beamsize for CLEAN blurring in uas
 
-nproc = 48 # number of processes; must not exceed the number of physical cores available
+proc = 48 # number of processes; must not exceed the number of physical cores available
 # vida template dict
 template = {'dblsrc':'gauss_2', 'disk_stretch': 'stretchdisk_1', 'disk_nostretch': 'disk_1', 'others_stretch': 'stretchmring_1_4', 'others_nostretch': 'mring_1_4'} 
 stride = 200 # checkpointing interval for VIDA
