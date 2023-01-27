@@ -9,7 +9,7 @@ from idfe.idfealg import *
 # define some variables
 imagerlist =  ['Comrade', 'smili', 'difmap'] # 'THEMIS' and 'ehtim' not finalised yet; 'difmap_geofit' low priority
 netcallist = ['netcal']
-modellist = ['cres000', 'cres090', 'cres180', 'cres270', 'dblsrc', 'disk', 'edisk', 'point+disk', 'point_edisk', 'ring']
+modellist = ['cres000', 'cres090', 'cres180', 'cres270', 'dblsrc', 'disk', 'edisk', 'point+disk', 'point+edisk', 'ring']
 daylist = ['3644'] # '3647' later
 calib = 'hops' # only hops for the synthetic data
 bandlist = ['b1', 'b2', 'b3', 'b4']
