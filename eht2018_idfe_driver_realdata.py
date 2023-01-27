@@ -67,19 +67,10 @@ for imager in imagerlist:
                             os.system(createlistcmd)
                            
                             # execute pipeline
-                            if model == 'dblsrc':
-                                # run 2 Guassian model
-                                execute(filelist, dataset_label, template['dblsrc'], 'vida', imager)
-                            elif 'disk' in model:
-                                if stretch:
-                                    execute(filelist, dataset_label, template['disk_stretch'], 'vida', imager)
-                                else:
-                                    execute(filelist, dataset_label, template['disk_nostretch'], 'vida', imager)
+                            if stretch:
+                                execute(filelist, dataset_label, template['stretch'], 'both', imager)
                             else:
-                                if stretch:
-                                    execute(filelist, dataset_label, template['others_stretch'], 'both', imager)
-                                else:
-                                    execute(filelist, dataset_label, template['others_nostretch'], 'both', imager)
+                                execute(filelist, dataset_label, template['nostretch'], 'both', imager)
                         else:
                             warn(f'{inputdir} does not exist! Skipping...')                            
 
@@ -132,19 +123,10 @@ for imager in imagerlist:
                                 f.writelines(filelist)
 
                             # execute pipeline
-                            if model == 'dblsrc':
-                                # run 2 Guassian model
-                                execute(filelistname, dataset_label, template['dblsrc'], 'vida', imager)
-                            elif 'disk' in model:
-                                if stretch:
-                                    execute(filelistname, dataset_label, template['disk_stretch'], 'vida', imager)
-                                else:
-                                    execute(filelistname, dataset_label, template['disk_nostretch'], 'vida', imager)
+                            if stretch:
+                                execute(filelistname, dataset_label, template['stretch'], 'both', imager)
                             else:
-                                if stretch:
-                                    execute(filelistname, dataset_label, template['others_stretch'], 'both', imager)
-                                else:
-                                    execute(filelistname, dataset_label, template['others_nostretch'], 'both', imager)
+                                execute(filelistname, dataset_label, template['nostretch'], 'both', imager)
 
                     else:
                         warn(f'{inputdir} does not exist! Skipping...')
