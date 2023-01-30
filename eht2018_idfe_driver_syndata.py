@@ -46,7 +46,10 @@ def execute(filelist, dataset_label, template, execmode, imager):
     if execmode in ['both', 'vida']:
         # TODO: blur CLEAN images for VIDA? isclean not input to runvida()
         info('Running VIDA...')
-        runvida(vidascript, filelist, vida_outfile, proc=proc, template=template, stride=stride, stretch=stretch, restart=restart)
+        if imager == 'difmap':
+            runvida(vidascript, filelist, vida_outfile, proc=proc, template=template, stride=stride, stretch=stretch, restart=restart, blur=beaminuas)
+        else:
+            runvida(vidascript, filelist, vida_outfile, proc=proc, template=template, stride=stride, stretch=stretch, restart=restart)
 
     return
 

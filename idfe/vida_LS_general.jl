@@ -26,6 +26,10 @@ function parse_commandline()
              help = "Checkpointing stride, i.e. number of steps."
              arg_type = Int
              default = 200
+        "--blur"
+             help = "Blur images before extracting fitted model parameters"
+             arg_type = Float64
+             default = 0.0
         "--out"
             help = "name of output files with extractions"
             default = "fit_summaries.csv"
@@ -60,6 +64,7 @@ function main()
     out_name = parsed_args["out"]
     seed = parsed_args["seed"]
     stride = parsed_args["stride"]
+    blur = parsed_args["blur"]
     templates = parsed_args["template"]
     @info "Template types $templates"
     restart = parsed_args["restart"]
@@ -68,6 +73,7 @@ function main()
     println("output name: $out_name, ")
     println("random seed $seed")
     println("Checkpoint stride $stride")
+    println("Blurring Gaussian kernel width in µas: $blur")
 
     #Read in a file and create list of images to template
     #the last line is the termination of the file
@@ -85,7 +91,7 @@ function main()
     main_sub(files, out_name,
              templates,
              seed,
-             restart, stride)
+             restart, stride, blur)
     println("Done! Check $out_name for summary")
     return 0
 end
@@ -297,9 +303,12 @@ function create_initial_df(fitsfiles, templates, restart, outname)
     return df, start_indx
 end
 
-@everywhere function fit_template(file, template,lower, upper)
+@everywhere function fit_template(file, template,lower, upper, blur)
     println("Extracting $file")
     image = load_fits(string(file))
+    if blur > 0.0
+        image = VIDA.blur(image, blur) # INI: blur the image with Gaussian kernel of given fwhm
+    end
     rimage = VIDA.rescale(image, 64, (-100.0, 100.0), (-100.0, 100.0))
     cimage = VIDA.clipimage(0.0,rimage)
     div = VIDA.LeastSquares(cimage)
@@ -317,7 +326,7 @@ end
 function main_sub(fitsfiles, out_name,
                   templates,
                   seed,
-                  restart, stride)
+                  restart, stride, blur)
 
     #"Define the template I want to use and the var bounds"
     model, lower, upper = make_initial_templates(templates...)
@@ -331,7 +340,7 @@ function main_sub(fitsfiles, out_name,
     indexpart = Iterators.partition(start_indx:length(fitsfiles), stride)
     for ii in indexpart
       results = pmap(fitsfiles[ii]) do f
-                fit_template(f, model, lower, upper)
+                fit_template(f, model, lower, upper, blur)
       end
       df[ii,1:VIDA.size(typeof(lower))] = hcat(first.(results)...)'
       df[ii,VIDA.size(typeof(lower))+1] = last.(results)
