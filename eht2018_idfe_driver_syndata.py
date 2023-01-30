@@ -20,7 +20,7 @@ parentdir = '/n/holylfs05/LABS/bhi/Lab/doeleman_lab/inatarajan/EHT2018_M87_IDFE'
 topsetparent = '/n/holylfs05/LABS/bhi/Lab/doeleman_lab/inatarajan/EHT2018_M87_IDFE/topset'
 vidascript = '/n/holylfs05/LABS/bhi/Lab/doeleman_lab/inatarajan/EHT2018_M87_IDFE/software/eht2018-idfe-pipeline/idfe/vida_LS_general.jl' # vida script to run
 
-execmode = 'idfe' # perform idfe and plotting
+execmode = 'both' # perform idfe and plotting
 beaminuas = 20 # beamsize for CLEAN blurring in uas
 
 proc = 48 # number of processes; must not exceed the number of physical cores available
@@ -71,18 +71,21 @@ for imager in imagerlist:
                            
                             # execute pipeline
                             if model == 'dblsrc':
+                                execmode = 'vida'
                                 # run 2 Guassian model
-                                execute(filelist, dataset_label, template['dblsrc'], 'vida', imager)
+                                execute(filelist, dataset_label, template['dblsrc'], execmode, imager)
                             elif 'disk' in model:
+                                execmode = 'vida'
                                 if stretch:
-                                    execute(filelist, dataset_label, template['disk_stretch'], 'vida', imager)
+                                    execute(filelist, dataset_label, template['disk_stretch'], execmode, imager)
                                 else:
-                                    execute(filelist, dataset_label, template['disk_nostretch'], 'vida', imager)
+                                    execute(filelist, dataset_label, template['disk_nostretch'], execmode, imager)
                             else:
+                                execmode = 'both'
                                 if stretch:
-                                    execute(filelist, dataset_label, template['others_stretch'], 'both', imager)
+                                    execute(filelist, dataset_label, template['others_stretch'], execmode, imager)
                                 else:
-                                    execute(filelist, dataset_label, template['others_nostretch'], 'both', imager)
+                                    execute(filelist, dataset_label, template['others_nostretch'], execmode, imager)
                         else:
                             warn(f'{inputdir} does not exist! Skipping...')                            
 
@@ -136,18 +139,21 @@ for imager in imagerlist:
 
                             # execute pipeline
                             if model == 'dblsrc':
+                                execmode = 'vida'
                                 # run 2 Guassian model
-                                execute(filelistname, dataset_label, template['dblsrc'], 'vida', imager)
+                                execute(filelistname, dataset_label, template['dblsrc'], execmode, imager)
                             elif 'disk' in model:
+                                execmode = 'vida'
                                 if stretch:
-                                    execute(filelistname, dataset_label, template['disk_stretch'], 'vida', imager)
+                                    execute(filelistname, dataset_label, template['disk_stretch'], execmode, imager)
                                 else:
-                                    execute(filelistname, dataset_label, template['disk_nostretch'], 'vida', imager)
+                                    execute(filelistname, dataset_label, template['disk_nostretch'], execmode, imager)
                             else:
+                                execmode = 'both'
                                 if stretch:
-                                    execute(filelistname, dataset_label, template['others_stretch'], 'both', imager)
+                                    execute(filelistname, dataset_label, template['others_stretch'], execmode, imager)
                                 else:
-                                    execute(filelistname, dataset_label, template['others_nostretch'], 'both', imager)
+                                    execute(filelistname, dataset_label, template['others_nostretch'], execmode, imager)
 
                     else:
                         warn(f'{inputdir} does not exist! Skipping...')

@@ -19,6 +19,7 @@ parentdir = '/n/holylfs05/LABS/bhi/Lab/doeleman_lab/inatarajan/EHT2018_M87_IDFE'
 topsetparent = '/n/holylfs05/LABS/bhi/Lab/doeleman_lab/inatarajan/EHT2018_M87_IDFE/topset'
 vidascript = '/n/holylfs05/LABS/bhi/Lab/doeleman_lab/inatarajan/EHT2018_M87_IDFE/software/eht2018-idfe-pipeline/idfe/vida_LS_general.jl' # vida script to run
 
+execmode = 'both'
 beaminuas = 20 # beamsize for CLEAN blurring in uas
 proc = 48 # number of processes; must not exceed the number of physical cores available
 # vida template dict
@@ -68,9 +69,9 @@ for imager in imagerlist:
                            
                             # execute pipeline
                             if stretch:
-                                execute(filelist, dataset_label, template['stretch'], 'both', imager)
+                                execute(filelist, dataset_label, template['stretch'], execmode, imager)
                             else:
-                                execute(filelist, dataset_label, template['nostretch'], 'both', imager)
+                                execute(filelist, dataset_label, template['nostretch'], execmode, imager)
                         else:
                             warn(f'{inputdir} does not exist! Skipping...')                            
 
@@ -124,9 +125,9 @@ for imager in imagerlist:
 
                             # execute pipeline
                             if stretch:
-                                execute(filelistname, dataset_label, template['stretch'], 'both', imager)
+                                execute(filelistname, dataset_label, template['stretch'], execmode, imager)
                             else:
-                                execute(filelistname, dataset_label, template['nostretch'], 'both', imager)
+                                execute(filelistname, dataset_label, template['nostretch'], execmode, imager)
 
                     else:
                         warn(f'{inputdir} does not exist! Skipping...')
