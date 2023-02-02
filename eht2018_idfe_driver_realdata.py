@@ -7,12 +7,12 @@ from idfe.utils import *
 from idfe.idfealg import *
 
 # define some variables
-imagerlist =  ['Comrade', 'smili', 'difmap'] # 'THEMIS' and 'ehtim' not finalised yet; 'difmap_geofit' low priority
+imagerlist =  ['THEMIS'] #['Comrade', 'smili', 'difmap'] # 'THEMIS' and 'ehtim' not finalised yet; 'difmap_geofit' low priority
 netcallist = ['netcal']
-daylist = ['3644'] # '3647' later
+daylist = ['3644', '3647'] # '3647' low priority
 caliblist = ['hops', 'casa'] # only hops for the synthetic data
 bandlist = ['b1', 'b2', 'b3', 'b4']
-smilibandlist = ['b1+2', 'b3+4'] # 'b1+2+3+4' low priority
+smilibandlist = ['b1+2', 'b3+4', 'b1+2+3+4'] # 'b1+2+3+4' low priority
 themisbandlist = ['b1b2', 'b3b4'] # 'b1b2b3b4' low priority
 
 parentdir = '/n/holylfs05/LABS/bhi/Lab/doeleman_lab/inatarajan/EHT2018_M87_IDFE'
@@ -42,7 +42,6 @@ def execute(filelist, dataset_label, template, execmode, imager):
         runrex(filelist, dataset_label, rex_outfile, isclean, proc=proc, beaminuas=beaminuas)
 
     if execmode in ['both', 'vida']:
-        # TODO: blur CLEAN images for VIDA? isclean not input to runvida()
         info('Running VIDA...')
         if imager == 'difmap':
             runvida(vidascript, filelist, vida_outfile, proc=proc, template=template, stride=stride, stretch=stretch, restart=restart, blur=beaminuas)
@@ -60,7 +59,10 @@ for imager in imagerlist:
                     if imager == 'Comrade': bands = bandlist
                     elif imager == 'THEMIS': bands = bandlist + themisbandlist
                     for band in bands:
-                        inputdir = os.path.join(parentdir, imager, netcal, f'{calib}_{day}_{band}')
+                        if imager == 'THEMIS':
+                            inputdir = os.path.join(parentdir, imager, 'M87real', 'casa_raster+LSG', f'{calib}_{day}_{band}')
+                        elif imager == 'Comrade':
+                            inputdir = os.path.join(parentdir, imager, netcal, f'{calib}_{day}_{band}')
                         if os.path.isdir(inputdir):
                             dataset_label = f'{imager}_{netcal}_{calib}_{day}_{band}'
 

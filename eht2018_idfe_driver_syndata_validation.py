@@ -44,7 +44,6 @@ def execute(filelist, dataset_label, template, execmode, imager):
         runrex(filelist, dataset_label, rex_outfile, isclean, proc=proc, beaminuas=beaminuas)
 
     if execmode in ['both', 'vida']:
-        # TODO: blur CLEAN images for VIDA? isclean not input to runvida()
         info('Running VIDA...')
         if imager == 'difmap':
             runvida(vidascript, filelist, vida_outfile, proc=proc, template=template, stride=stride, stretch=stretch, restart=restart, blur=beaminuas)
@@ -62,7 +61,10 @@ for imager in imagerlist:
                     if imager == 'Comrade': bands = bandlist
                     elif imager == 'THEMIS': bands = bandlist + themisbandlist
                     for band in bands:
-                        inputdir = os.path.join(parentdir, imager, netcal, f'{model}_{day}_{band}')
+                        if imager == 'THEMIS' and model == 'grmhd':
+                            inputdir = os.path.join(parentdir, imager, netcal, f'image_a+0.94_0060_163_0_230.e9_6.2e9_9.50325e+24_40.fits_{day}_{band}')
+                        else:
+                            inputdir = os.path.join(parentdir, imager, netcal, f'{model}_{day}_{band}')
                         if os.path.isdir(inputdir):
                             dataset_label = f'{imager}_{netcal}_{model}_{calib}_{day}_{band}'
 
