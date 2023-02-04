@@ -30,7 +30,7 @@ from idfe.utils import *
 # define some inputs
 
 # parameters to extract from the results
-rexparlist = ['D', 'PAori', 'W', 'fc', 'A'] # diameter, position angle, width, frac. central brightness, brightness asymmetry
+rexparlist = ['D', 'PAori', 'W', 'fc', 'A'] # diameter, position angle, width, frac. central brightness, brightness asymmetry; also used as output parlist
 vidaparlist = ['r0', u'\u03bes', u'\u03c3', 'floor', 's'] # radius, position angle, sigma for width, floor, brightness asymmetry
 parunitlist = ['uas', 'deg', 'uas', 'NA', 'NA']
 parlabellist = [r'Diameter ($\mu$as)', r'Position angle ($^{\circ}$)', r'FWHM width ($\mu$as)', r'Frac. cen. brightness', r'Brightness asymmetry']
@@ -38,24 +38,28 @@ parlabellist = [r'Diameter ($\mu$as)', r'Position angle ($^{\circ}$)', r'FWHM wi
 npars = len(rexparlist)
 
 # to loop through datasets
-imagerlist = ['Comrade', 'smili', 'difmap', 'THEMIS', 'ehtim']
+imagerlist = ['Comrade'] #['Comrade', 'smili', 'difmap', 'THEMIS', 'ehtim']
 netcal = 'netcal' # only netcal data always
-modellist = ['ring', 'cres000', 'cres090', 'cres180', 'cres270', 'dblsrc', 'disk', 'edisk', 'point+disk', 'point+edisk', 'grmhd', 'ecres000', 'ecres045', 'ecres090', 'ecres315']
-daylist = ['3644', '3647']
-caliblist = ['hops', 'casa']
-bandlist = ['b1', 'b2', 'b3', 'b4']
-smilibandlist = ['b1+2', 'b3+4'] #, 'b1+2+3+4']
-themisbandlist = ['b1b2', 'b3b4'] #, 'b1b2b3b4']
+modellist = ['ring'] #['ring', 'cres000', 'cres090', 'cres180', 'cres270', 'dblsrc', 'disk', 'edisk', 'point+disk', 'point+edisk', 'grmhd', 'ecres000', 'ecres045', 'ecres090', 'ecres315']
+daylist = ['3644'] #['3644', '3647']
+calib = 'hops'
+bandlist = ['b1'] #['b1', 'b2', 'b3', 'b4']
+smilibandlist = [] #['b1+2', 'b3+4'] #, 'b1+2+3+4']
+themisbandlist = [] #['b1b2', 'b3b4'] #, 'b1b2b3b4']
 idfelist = ['REx', 'VIDA']
 
 parentdir = '/n/holylfs05/LABS/bhi/Lab/doeleman_lab/inatarajan/EHT2018_M87_IDFE'
-outputdir = 'metronized'
+outputdir = 'consolidate_metronize_output'
 
 # metronization settings
 #metronization_parentdir = '/DATA/EHT/20211405_MoD_datasets_PaperIV'
 nproc = 48
-metronmodelist = ['1nometron', '2expmode_permissive', '3expmode_moderate', '4expmode_strict']
 hdepth = 2
+
+# define metronization modes
+metrondict = {'m1permissive': {'ngrid': 16, 'pspan': 2, 'hspan': 1.6, 'thres': 0.1, 'hbirth': 2},
+              'm2moderate': {'ngrid': 16, 'pspan': 2, 'hspan': 1.6, 'thres': 0.2, 'hbirth': 2},
+              'm3strict': {'ngrid': 16, 'pspan': 2, 'hspan': 1.6, 'thres': 0.3, 'hbirth': 2}}
 
 # get image parameters for each imager from a representative image
 repimgdict = {'Comrade': os.path.join(parentdir, 'Comrade', netcal, 'ring_3644_b1', 'ring_3644_b1_image_0001.fits'),
@@ -141,7 +145,7 @@ def read_fits(fname, has2dims, imager='smili'):
     # clip or pad as necessary
     newdim = imgzoomed.shape[0]
 
-    print(img.shape, repimgcdelts[imager], newdim)
+    #print(img.shape, repimgcdelts[imager], newdim)
 
     if newdim < 128:
         imgfin = np.pad(imgzoomed, (int(np.floor((targetdim-newdim)/2)), int(np.ceil((targetdim-newdim)/2)))) 
@@ -152,7 +156,8 @@ def read_fits(fname, has2dims, imager='smili'):
     else:
         imgfin = imgzoomed
 
-    print(imgfin.shape) 
+    #print(imgfin.shape)
+    return imgfin 
 
 '''read_fits(repimgdict['Comrade'], True, imager='Comrade')
 read_fits(repimgdict['smili'], False, imager='smili')
@@ -348,14 +353,14 @@ for imager in imagerlist:
                 '''
 
                 # get input column names and filenames
-                rexcolsuffix = f'{imager}_netcal_{model}_hops_{day}_{band}'
+                rexcolsuffix = f'{imager}_{netcal}_{model}_{calib}_{day}_{band}'
                 if model in ['grmhd', 'ecres000', 'ecres045', 'ecres090', 'ecres315']:
                     category = 'validation'
                 else:
                     category = 'synthetic'
 
-                rexfilename = os.path.join(parentdir, 'results', category, f'{imager}_netcal_{model}_hops_{day}_{band}_REx.h5')
-                vidafilename = os.path.join(parentdir, 'results', category, f'{imager}_netcal_{model}_hops_{day}_{band}_VIDA_stretchmring_1_4.csv')
+                rexfilename = os.path.join(parentdir, 'results', category, model, f'{imager}_{netcal}_{model}_{calib}_{day}_{band}_REx.h5')
+                vidafilename = os.path.join(parentdir, 'results', category, model, f'{imager}_{netcal}_{model}_{calib}_{day}_{band}_VIDA_stretchmring_1_4.csv')
 
                 # set output hdf5 colname
                 dataset_label = f'{imager}_{model}_{day}_{band}'
@@ -364,22 +369,23 @@ for imager in imagerlist:
                 df_rex = pd.read_hdf(rexfilename, 'parameters')
                 #df_rex.sort_values(by=['id'], inplace=True) # sort columns by topset id
                 topsetidrex_arr = np.array(df_rex['id'], dtype=int)
+                print(topsetidrex_arr)
                 nimages = topsetidrex_arr.shape[0]
             
                 df_output_pars = pd.DataFrame([])
                 df_output_pars['id'] = topsetidrex_arr
                 # read in all the relevant parameters from REx HDF5 output file
-                for inpar,outpar,parunit in zip(inparlist, rexparlist, parunitlist):
-                  if inpar == 'D':
-                    df_output_pars[f'REx_{outpar}_{parunit}'] = np.array(df_rex[f'{inpar}_{rexcolsuffix}'])/2. # convert diameter to radius
-                  elif inpar != 'PAori':
-                    df_output_pars[f'REx_{outpar}_{parunit}'] = np.array(df_rex[f'{inpar}_{rexcolsuffix}'])
-                  elif inpar == 'PAori':
+                for par,parunit in zip(rexparlist, parunitlist):
+                  if par == 'D':
+                    df_output_pars[f'REx_{par}_{parunit}'] = np.array(df_rex[f'{par}_{rexcolsuffix}'])/2. # convert diameter to radius
+                  elif par != 'PAori':
+                    df_output_pars[f'REx_{par}_{parunit}'] = np.array(df_rex[f'{par}_{rexcolsuffix}'])
+                  elif par == 'PAori':
                     # adjust the position angle range output from REx
-                    tmparr = np.array(df_rex[f'{inpar}_{rexcolsuffix}'])
+                    tmparr = np.array(df_rex[f'{par}_{rexcolsuffix}'])
                     tmparr[np.where(tmparr>180)] = tmparr[np.where(tmparr>180)]%360-360
                     tmparr[np.where(tmparr<=-180)] = tmparr[np.where(tmparr<=-180)]%360
-                    df_output_pars[f'REx_{outpar}_{parunit}'] = tmparr
+                    df_output_pars[f'REx_{par}_{parunit}'] = tmparr
 
                 # read in the VIDA output file
                 vida_allpars = np.genfromtxt(vidafilename, dtype=None, delimiter=',', encoding=None)
@@ -387,15 +393,16 @@ for imager in imagerlist:
                 #############################################################
                 # read relevant VIDA parameters and convert them to REx equivalent values
                 for outpar,parunit in zip(rexparlist,parunitlist):
-                    if outpar == 'R':
-                        df_output_pars[f'VIDA_{outpar}_{parunit}'] = np.array(vida_allpars[1:,0].astype(float)) # radius
+                    if outpar == 'D':
+                        df_output_pars[f'VIDA_{outpar}_{parunit}'] = 2.*np.array(vida_allpars[1:,0].astype(float)) # radius
                     elif outpar == 'W':
-                        df_output_pars[f'VIDA_{outpar}_{parunit}'] = 2*np.sqrt(2*np.log(2))*vida_allpars[1:,1].astype(float) # convert sigma to ring width
+                        df_output_pars[f'VIDA_{outpar}_{parunit}'] = 2.*np.sqrt(2*np.log(2))*vida_allpars[1:,1].astype(float) # convert sigma to ring width
                     elif outpar == 'PAori':
-                        if varg1 == 0:
+                        '''if varg1 == 0:
                             df_output_pars[f'VIDA_{outpar}_{parunit}'] = np.rad2deg(np.pi/2 - np.array(vida_allpars[1:,6].astype(float))) # position angle
                         elif varg1 == 1:
-                            df_output_pars[f'VIDA_{outpar}_{parunit}'] = np.rad2deg(np.pi/2 - np.array(vida_allpars[1:,8].astype(float))) # position angle
+                            df_output_pars[f'VIDA_{outpar}_{parunit}'] = np.rad2deg(np.pi/2 - np.array(vida_allpars[1:,8].astype(float))) # position angle'''
+                        df_output_pars[f'VIDA_{outpar}_{parunit}'] = np.rad2deg(np.pi/2 - np.array(vida_allpars[1:,8].astype(float))) # position angle
 
                         # adjust position angle values to be b/w -180 to 180 degrees
                         tmparr = df_output_pars[f'VIDA_{outpar}_{parunit}'].to_numpy()
@@ -427,31 +434,37 @@ for imager in imagerlist:
 
                 ### df_output_pars.sort_values(by=['id'], inplace=True) # sort columns by topset id ::: COLUMNS SHOULD ALREADY BE SORTED
                 df_output_pars.to_hdf(f'{outputdir}/IDFE_{dataset_label}_results.h5', 'parameters', mode='w', complevel=9, format='table')
-                info(f'Relevant parameters saved to {outputdir}/IDFE_{dataset_label}_results.h5')
+                info(f'Parameters extracted from REx and VIDA for {dataset_label} saved to {outputdir}/IDFE_{dataset_label}.h5')
             
                 ################################################################
                 # set parameters for 3 metronization modes
-                for metronmode in metronmodelist:
+                #for metronmode in metronmodelist:
+                for metronmode in metrondict.keys():
                     #df_metronized = copy.deepcopy(df_output_pars)
                     # set optimal metronization parameters
-                    if metronmode == '2expmode_permissive':
+                    '''if metronmode == 'm1permissive':
                         ngrid = 16
                         pspan = 2
                         hspan = 1.6
                         thres = 0.1
                         hbirth = 2
-                    elif metronmode == '3expmode_moderate':
+                    elif metronmode == 'm2moderate':
                         ngrid = 16
                         pspan = 2
                         hspan = 1.6
                         thres = 0.2
                         hbirth = 2
-                    elif metronmode == '4expmode_strict':
+                    elif metronmode == 'm3strict':
                         ngrid = 16
                         pspan = 2
                         hspan = 1.6
                         thres = 0.3
-                        hbirth = 2
+                        hbirth = 2'''
+                    ngrid = metrondict[metronmode]['ngrid']
+                    pspan = metrondict[metronmode]['pspan']
+                    hspan = metrondict[metronmode]['hspan']
+                    thres = metrondict[metronmode]['thres']
+                    hbirth = metrondict[metronmode]['hbirth']
 
                     # metronize and remove rows depending on the mode
                     if metronmode != '1nometron':
@@ -492,9 +505,9 @@ for imager in imagerlist:
 
                         # read filelist from IDFE output directory
                         if model in ['grmhd', 'ecres000', 'ecres045', 'ecres090', 'ecres315']:
-                            filelist = os.path.join(parentdir, 'results', 'validation', f'{imager}_netcal_{model}_hops_{day}_{band}.filelist')
+                            filelist = os.path.join(parentdir, 'results', 'validation', model, f'{imager}_{netcal}_{model}_{calib}_{day}_{band}.filelist')
                         else:
-                            filelist = os.path.join(parentdir, 'results', 'synthetic', f'{imager}_netcal_{model}_hops_{day}_{band}.filelist')
+                            filelist = os.path.join(parentdir, 'results', 'synthetic', model, f'{imager}_{netcal}_{model}_{calib}_{day}_{band}.filelist')
 
                         # set has2dims=False for difmap and smili
                         if imager in ['difmap', 'smili']:
@@ -503,7 +516,7 @@ for imager in imagerlist:
                             has2dims = True
 
                         # metronize the images
-                        info(f'Metronizing in mode "{metronmode}: ngrid={ngrid}, pspan={pspan}, hspan={hspan}, threshold={thres}, hbirth={hbirth}"...')
+                        info(f'Metronization mode "{metronmode}: ngrid={ngrid}, pspan={pspan}, hspan={hspan}, threshold={thres}, hbirth={hbirth}"')
                         toporeslist = run_metronization(filelist, ngrid=ngrid, hlower=None, hupper=None, pspan=pspan, \
                                 hspan=hspan, threshold=thres, hbirth=hbirth, proc=nproc, has2dims=has2dims, hdepth=hdepth, imager=imager)
 
@@ -531,7 +544,7 @@ for imager in imagerlist:
 
                     # create temporary dataframe and populate it
                     tmpdf = pd.DataFrame()
-                    tmpdf['id'] = df_output_pars['id'].astype(int)
+                    tmpdf['id'] = df_output_pars['id']
                     tmpdf['label'] = [f'{dataset_label}_{metronmode}']*nimages
                     tmpdf['metronmode'] = [metronmode]*nimages
                     if metronmode == '1nometron':
@@ -539,13 +552,8 @@ for imager in imagerlist:
                     else:
                         tmpdf['metrontype'] = topores_types
                     tmpdf['imager'] = [imager]*nimages
-                    tmpdf['calib'] = [calib]*nimages
-                    tmpdf['scatter'] = [scatter]*nimages
+                    tmpdf['model'] = [model]*nimages
                     tmpdf['day'] = [day]*nimages
-                    tmpdf['grmhd'] = [grmhd]*nimages
-                    tmpdf['spin'] = [spin]*nimages
-                    tmpdf['Rh'] = [Rh]*nimages
-                    tmpdf['inc'] = [inc]*nimages                               
                     tmpdf['band'] = [band]*nimages
                     for idfemethod in idfelist:
                         for outpar,parunit in zip(rexparlist, parunitlist):
@@ -558,5 +566,6 @@ for imager in imagerlist:
 df_consolidated = df_consolidated.set_index(np.arange(df_consolidated.shape[0]))
 
 # save the consolidated dataframe
-df_consolidated.to_hdf(f'{outputdir}/IDFE_synthetic.h5', 'parameters', mode='w', complevel=9, format='table')
-info(f'Consolidated DataFrame saved to {outputdir}/IDFE_synthetic.h5')
+outname = f'IDFEMetron_synthetic_{netcal}_{calib}.h5'
+df_consolidated.to_hdf(f'{outputdir}/{outname}', 'parameters', mode='w', complevel=9, format='table')
+info(f'Consolidated DataFrame saved to {outputdir}/{outname}')
