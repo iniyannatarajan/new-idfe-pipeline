@@ -312,7 +312,7 @@ def runrex(filelist, label, rex_outfile, isclean, proc=8, beaminuas=20, frac=1.0
     info(f'REx output saved to {rex_outfile}')
 
 
-def runvida(vidascript, filelist, vida_outfile, proc=8, template='mring_1_4', stride=200, stretch=False, restart=False, model='FLOOR', blur=0):
+def runvida(vidascript, filelist, vida_outfile, proc=8, template='mring_1_4', stride=200, stretch=False, restart=False, blur=0, fc_script='fc_convert_2018.jl'):
     '''
     Perform IDFE using VIDA
     '''
@@ -326,19 +326,16 @@ def runvida(vidascript, filelist, vida_outfile, proc=8, template='mring_1_4', st
     subprocess.run(runvidacmd, shell=True, universal_newlines=True)
 
     # extract fractional central brightness from VIDA output and write to a new file
-    if stretch:
-        info(f"stretch enabled for VIDA")
-    else:
-        cmd = f'readlink -f {vida_outfile} >filelist'
-        info(cmd)
-        subprocess.run(cmd, shell=True, universal_newlines=True)
+    cmd = f'readlink -f {vida_outfile} >filelist'
+    info(cmd)
+    subprocess.run(cmd, shell=True, universal_newlines=True)
 
-        # get path for fc_convert.jl
-        vidapath = os.path.split(vidascript)[0]
-        fcscript = os.path.join(vidapath, 'fc_convert.jl')
+    # get path for fcscript
+    vidapath = os.path.split(vidascript)[0]
+    fcscript = os.path.join(vidapath, fc_script)
 
-        cmd = f'julia --project={vidapath} {fcscript} filelist --model {model}'
-        info(cmd)
-        subprocess.run(cmd, shell=True, universal_newlines=True)
+    cmd = f'julia --project={vidapath} {fcscript} filelist'
+    info(cmd)
+    subprocess.run(cmd, shell=True, universal_newlines=True)
 
     info(f'VIDA output saved to {vida_outfile}')
