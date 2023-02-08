@@ -254,7 +254,7 @@ def fit_ring(image,Nr=50,Npa=25,rmin_search = 10,rmax_search = 100,fov_search = 
     return xc,yc
 
 
-def runrex(filelist, label, rex_outfile, isclean, proc=8, beaminuas=20, frac=1.0):
+def runrex(filelist, label, rex_outfile, isclean, proc=8, beaminuas=20, frac=1.0, fov=200*RADPERUAS, npix=256, interp='linear'):
 
     # get filenames from the filelist and define some variables
     fnames = np.genfromtxt(f'{filelist}', dtype='str')
@@ -276,7 +276,9 @@ def runrex(filelist, label, rex_outfile, isclean, proc=8, beaminuas=20, frac=1.0
         imglist.append(eh.image.load_fits(fname))'''
     
     if isclean:
+        print(isclean, fov, npix, interp)
         for img in imglist:
+            img = img.regrid_image(targetfov=fov, npix=npix, interp=interp) # regrid image to restrict the FoV of CLEAN images
             img = img.blur_gauss(beamparams=[beaminuas*RADPERUAS,beaminuas*RADPERUAS,0], frac=frac)
         
     # extract ring characteristics in parallel
