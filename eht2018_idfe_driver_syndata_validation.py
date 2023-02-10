@@ -7,20 +7,20 @@ from idfe.utils import *
 from idfe.idfealg import *
 
 # define some variables
-imagerlist =  ['Comrade', 'smili', 'difmap'] # 'THEMIS' and 'ehtim' not finalised yet; 'difmap_geofit' low priority
+imagerlist =  ['difmap'] #['Comrade', 'smili', 'difmap'] # 'THEMIS' and 'ehtim' not finalised yet; 'difmap_geofit' low priority
 netcallist = ['netcal']
-modellist = ['ecres000', 'ecres045', 'ecres090', 'ecres315', 'grmhd']
-daylist = ['3644'] # '3647' later
+modellist = ['grmhd'] #['ecres000', 'ecres045', 'ecres090', 'ecres315', 'grmhd']
+daylist = ['3644'] #['3644'] # '3647' later
 calib = 'hops' # only hops for the synthetic data
 bandlist = ['b1', 'b2', 'b3', 'b4']
 smilibandlist = ['b1+2', 'b3+4'] # 'b1+2+3+4' low priority
-themisbandlist = ['b1b2', 'b3b4'] # 'b1b2b3b4' low priority
+themisbandlist = ['b1b2', 'b3b4', 'b1b2b3b4'] # low priority
 
 parentdir = '/n/holylfs05/LABS/bhi/Lab/doeleman_lab/inatarajan/EHT2018_M87_IDFE'
 topsetparent = '/n/holylfs05/LABS/bhi/Lab/doeleman_lab/inatarajan/EHT2018_M87_IDFE/topset'
 vidascript = '/n/holylfs05/LABS/bhi/Lab/doeleman_lab/inatarajan/EHT2018_M87_IDFE/software/eht2018-idfe-pipeline/idfe/vida_LS_general.jl' # vida script to run
 
-execmode = 'both' # perform idfe and plotting
+execmode = 'both' # both, rex, vida
 beaminuas = 20 # beamsize for CLEAN blurring in uas
 
 proc = 48 # number of processes; must not exceed the number of physical cores available
@@ -36,8 +36,7 @@ def execute(filelist, dataset_label, template, execmode, imager):
     rex_outfile = f'{dataset_label}_REx.h5'
     vida_outfile = f'{dataset_label}_VIDA_{template}.csv'
 
-    if imager in ['difmap', 'difmap_geofit']: isclean = True
-    else: isclean = False
+    isclean = False # isclean is always False
 
     if execmode in ['both', 'rex']:
         info('Running REx...')
@@ -45,10 +44,10 @@ def execute(filelist, dataset_label, template, execmode, imager):
 
     if execmode in ['both', 'vida']:
         info('Running VIDA...')
-        if imager == 'difmap':
-            runvida(vidascript, filelist, vida_outfile, proc=proc, template=template, stride=stride, stretch=stretch, restart=restart, blur=beaminuas)
-        else:
-            runvida(vidascript, filelist, vida_outfile, proc=proc, template=template, stride=stride, stretch=stretch, restart=restart)
+        #if isclean:
+        #    runvida(vidascript, filelist, vida_outfile, proc=proc, template=template, stride=stride, stretch=stretch, restart=restart, blur=beaminuas)
+        #else:
+        runvida(vidascript, filelist, vida_outfile, proc=proc, template=template, stride=stride, stretch=stretch, restart=restart)
 
     return
 
@@ -119,7 +118,8 @@ for imager in imagerlist:
 
                     # deduce dataset path and pass on to the pipeline                    
                     if imager == 'ehtim': inputdir = os.path.join(parentdir, imager, f'{model}_{day}_{calib}-{band}')
-                    elif imager == 'difmap_geofit': inputdir = os.path.join(parentdir, 'difmap', f'{model}_{day}_{band}_geofit')
+                    elif imager == 'difmap': inputdir = os.path.join(parentdir, 'difmap_blurredcc_r2', f'{model}_{day}_{band}')
+                    elif imager == 'difmap_geofit': inputdir = os.path.join(parentdir, 'difmap_blurredcc_r2', f'{model}_{day}_{band}_geofit')
                     elif imager == 'smili': inputdir = os.path.join(parentdir, imager, 'image_topset_hops', f'{model}_{day}_{band}')
                     else: inputdir = os.path.join(parentdir, imager, f'{model}_{day}_{band}')
 
@@ -155,7 +155,7 @@ for imager in imagerlist:
                                 else:
                                     execute(filelistname, dataset_label, template['disk_nostretch'], execmode, imager)
                             else:
-                                execmode = 'both'
+                                execmode = 'both' # ONLY FOR REDOING VIDA; CHANGE TO 'VIDA' LATER!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                                 if stretch:
                                     execute(filelistname, dataset_label, template['others_stretch'], execmode, imager)
                                 else:

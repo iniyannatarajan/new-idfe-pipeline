@@ -7,19 +7,19 @@ from idfe.utils import *
 from idfe.idfealg import *
 
 # define some variables
-imagerlist =  ['THEMIS'] #['Comrade', 'smili', 'difmap'] # 'THEMIS' and 'ehtim' not finalised yet; 'difmap_geofit' low priority
+imagerlist =  ['difmap', 'difmap_geofit'] #['Comrade', 'smili', 'difmap'] # 'THEMIS' and 'ehtim' not finalised yet; 'difmap_geofit' low priority
 netcallist = ['netcal']
-daylist = ['3644', '3647'] # '3647' low priority
+daylist = ['3644'] #, '3647'] # '3647' low priority
 caliblist = ['hops', 'casa'] # only hops for the synthetic data
 bandlist = ['b1', 'b2', 'b3', 'b4']
 smilibandlist = ['b1+2', 'b3+4', 'b1+2+3+4'] # 'b1+2+3+4' low priority
-themisbandlist = ['b1b2', 'b3b4'] # 'b1b2b3b4' low priority
+themisbandlist = ['b12', 'b34'] #['b1b2', 'b3b4', 'b1b2b3b4'] # low priority
 
 parentdir = '/n/holylfs05/LABS/bhi/Lab/doeleman_lab/inatarajan/EHT2018_M87_IDFE'
 topsetparent = '/n/holylfs05/LABS/bhi/Lab/doeleman_lab/inatarajan/EHT2018_M87_IDFE/topset'
 vidascript = '/n/holylfs05/LABS/bhi/Lab/doeleman_lab/inatarajan/EHT2018_M87_IDFE/software/eht2018-idfe-pipeline/idfe/vida_LS_general.jl' # vida script to run
 
-execmode = 'both'
+execmode = 'both' # rex, vida, both
 beaminuas = 20 # beamsize for CLEAN blurring in uas
 proc = 48 # number of processes; must not exceed the number of physical cores available
 # vida template dict
@@ -34,8 +34,7 @@ def execute(filelist, dataset_label, template, execmode, imager):
     rex_outfile = f'{dataset_label}_REx.h5'
     vida_outfile = f'{dataset_label}_VIDA_{template}.csv'
 
-    if imager in ['difmap', 'difmap_geofit']: isclean = True
-    else: isclean = False
+    isclean = False # we are using blurredcc difmap images; isclean should always be False
 
     if execmode in ['both', 'rex']:
         info('Running REx...')
@@ -43,10 +42,10 @@ def execute(filelist, dataset_label, template, execmode, imager):
 
     if execmode in ['both', 'vida']:
         info('Running VIDA...')
-        if imager == 'difmap':
-            runvida(vidascript, filelist, vida_outfile, proc=proc, template=template, stride=stride, stretch=stretch, restart=restart, blur=beaminuas)
-        else:
-            runvida(vidascript, filelist, vida_outfile, proc=proc, template=template, stride=stride, stretch=stretch, restart=restart)
+        #if isclean:
+        #    runvida(vidascript, filelist, vida_outfile, proc=proc, template=template, stride=stride, stretch=stretch, restart=restart, blur=beaminuas)
+        #else:
+        runvida(vidascript, filelist, vida_outfile, proc=proc, template=template, stride=stride, stretch=stretch, restart=restart)
 
     return
 
@@ -60,7 +59,7 @@ for imager in imagerlist:
                     elif imager == 'THEMIS': bands = bandlist + themisbandlist
                     for band in bands:
                         if imager == 'THEMIS':
-                            inputdir = os.path.join(parentdir, imager, 'M87real', 'casa_raster+LSG', f'{calib}_{day}_{band}')
+                            inputdir = os.path.join(parentdir, imager, 'M87real', f'{calib}_raster+LSG_unblurred', f'{calib}_{day}_{band}')
                         elif imager == 'Comrade':
                             inputdir = os.path.join(parentdir, imager, netcal, f'{calib}_{day}_{band}')
                         if os.path.isdir(inputdir):
@@ -105,7 +104,8 @@ for imager in imagerlist:
 
                     # deduce dataset path and pass on to the pipeline                    
                     if imager == 'ehtim': inputdir = os.path.join(parentdir, imager, f'{calib}_{day}_{band}')
-                    elif imager == 'difmap_geofit': inputdir = os.path.join(parentdir, 'difmap', f'{calib}_{day}_{band}_geofit')
+                    elif imager == 'difmap': inputdir = os.path.join(parentdir, 'difmap_blurredcc_r2', f'{calib}_{day}_{band}')
+                    elif imager == 'difmap_geofit': inputdir = os.path.join(parentdir, 'difmap_blurredcc_r2', f'{calib}_{day}_{band}_geofit')
                     else: inputdir = os.path.join(parentdir, imager, f'{calib}_{day}_{band}')
 
                     # if image evaluation has been done for this particular dataset, proceed with execution; otherwise skip directory
