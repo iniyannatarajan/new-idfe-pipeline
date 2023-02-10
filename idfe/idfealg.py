@@ -5,6 +5,7 @@ import copy
 import ehtim as eh
 import pandas as pd
 import subprocess
+from functools import partial
 from multiprocessing import Pool
 from scipy import interpolate, stats
 import astropy.units as u
@@ -264,19 +265,21 @@ def runrex(filelist, label, rex_outfile, isclean, proc=8, beaminuas=20, frac=1.0
     npars = len(allpars)
     nimages = topsetcode.shape[0]
 
-    # Load FITS images into ehtim and blur if necessary
+    ### Load FITS images into ehtim and blur if necessary
     pool = Pool(proc)
-    imglist = list(pool.imap(eh.image.load_fits, fnames))
+    if isclean:
+        imglist = list(pool.imap(partial(eh.image.load_fits, aipscc=True), fnames))
+    else:
+        imglist = list(pool.imap(eh.image.load_fits, fnames))
     pool.close()
 
-    # Load FITS images into ehtim serially (for DEBUGGING)
+    # load FITS images into ehtim serially (for DEBUGGING)
     '''imglist = []
     for fname in fnames:
         info(f'Loading image {fname}...')
         imglist.append(eh.image.load_fits(fname))'''
     
     if isclean:
-        print(isclean, fov, npix, interp)
         for img in imglist:
             img = img.regrid_image(targetfov=fov, npix=npix, interp=interp) # regrid image to restrict the FoV of CLEAN images
             img = img.blur_gauss(beamparams=[beaminuas*RADPERUAS,beaminuas*RADPERUAS,0], frac=frac)
