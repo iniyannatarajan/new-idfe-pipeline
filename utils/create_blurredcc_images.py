@@ -1,3 +1,8 @@
+#!/usr/bin/env python
+
+# Script to create blurred FITS images using AIPS CC components
+# Used to create a new set of topset images from the original DIFMAP images for further IDFE+TDA processing
+
 import os
 import numpy as np
 import pandas as pd

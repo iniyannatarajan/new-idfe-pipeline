@@ -1,3 +1,8 @@
+#!/usr/bin/env python
+
+# Script to accept a VIDA output file ('stetchmring_1_4' template) as input and generate a *_fc2.csv file
+# that includes the floor -> fc conversion
+
 import os
 import sys
 import subprocess

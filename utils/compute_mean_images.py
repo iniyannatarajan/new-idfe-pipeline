@@ -1,3 +1,7 @@
+#!/usr/bin/env python
+
+# Script to compute mean image of all images in a given directory
+
 import os
 import numpy as np
 from astropy.io import fits
