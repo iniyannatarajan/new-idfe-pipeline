@@ -11,6 +11,7 @@ Welcome to EHT2018-IDFE-pipeline's documentation!
    :caption: Contents:
 
    intro
+   data-description
    install
    running
    contributors
