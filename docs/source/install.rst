@@ -39,11 +39,19 @@ Clone *ehtplot* and install using *pip*.
     cd ehtplot
     pip install .
 
-Install *metronization* from GitHub using *pip* (Metronization installation does not work as of now!!!).
+Install *dionysus* from conda-forge **before** installing metronization.
 
 .. code-block:: bash
 
-    pip install -e git+git://github.com/focisrc/metronization.git#egg=metronization
+   conda install -c conda-forge dionysus
+    
+Install *metronization* from GitHub using *pip*.
+
+.. code-block:: bash
+
+   git clone https://github.com/focisrc/metronization.git
+   cd metronization
+   pip install -e .
 
 Installing the pipeline
 -----------------------

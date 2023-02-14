@@ -11,10 +11,6 @@ Days : 3644 (April 21) and 3647 (April 25).
 
 Bands: b1, b2, b3, b4; some imaging tools also process combined band data i.e., b1+2, b3+4, b1+2+3+4
 
-
-Bayesian methods
-----------------
-
 Comrade
 ^^^^^^^
 
@@ -46,7 +42,7 @@ THEMIS
 ^^^^^^
 
 **THEMIS/synthetic_unblurred/netcal** - hosts all synthetic datasets; on Cannon cluster, the path is slightly changed to **THEMIS/netcal**.
-**THEMIS/M87real** - hosts all M87 datasets, subdivided further under **<casa/hops>_raster+LSG_unblurred>.
+**THEMIS/M87real** - hosts all M87 datasets, subdivided further under **<casa/hops>_raster+LSG_unblurred>**.
 
 All the synthetic datasets are named **<model>_<day>_<band>**. All the M87 datasets are named **<casa/hops>_<day>_<band>**.
 
