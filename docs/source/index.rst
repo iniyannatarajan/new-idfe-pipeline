@@ -10,10 +10,10 @@ Welcome to EHT2018-IDFE-pipeline's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-intro
-install
-running
-contributors
+   intro
+   install
+   running
+   contributors
 
 Indices and tables
 ==================
