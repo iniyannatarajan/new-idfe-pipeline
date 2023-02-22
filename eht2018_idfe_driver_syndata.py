@@ -7,9 +7,9 @@ from idfe.utils import *
 from idfe.idfealg import *
 
 # define some variables
-imagerlist = ['Comrade', 'smili', 'difmap', 'difmap_geofit', 'THEMIS', 'ehtim'] # 'difmap_geofit' low priority
+imagerlist =  ['Comrade', 'smili', 'difmap_geofit', 'THEMIS', 'ehtim']
 netcallist = ['netcal']
-modellist = ['cres000', 'cres090', 'cres180', 'cres270', 'dblsrc', 'disk', 'edisk', 'point+disk', 'point+edisk', 'ring']
+modellist = ['ring', 'cres000', 'cres090', 'cres180', 'cres270', 'dblsrc', 'disk', 'edisk', 'point+disk', 'point+edisk', 'grmhd', 'ecres000', 'ecres045', 'ecres090', 'ecres315']
 daylist = ['3644', '3647']
 calib = 'hops' # only hops for the synthetic data
 bandlist = ['b1', 'b2', 'b3', 'b4']
@@ -25,7 +25,8 @@ beaminuas = 20 # beamsize for CLEAN blurring in uas
 
 proc = 48 # number of processes; must not exceed the number of physical cores available
 # vida template dict
-template = {'dblsrc':'gauss_2', 'disk_stretch': 'stretchdisk_1', 'disk_nostretch': 'disk_1', 'others_stretch': 'stretchmring_1_4', 'others_nostretch': 'mring_1_4'} 
+template = {'dblsrc':'gauss_2', 'disk_stretch': 'stretchdisk_1', 'disk_nostretch': 'disk_1', 'others_stretch': 'stretchmring_1_2', 'others_nostretch': 'mring_1_2'}  # use mring m=2
+#template = {'dblsrc':'gauss_2', 'disk_stretch': 'stretchdisk_1', 'disk_nostretch': 'disk_1', 'others_stretch': 'stretchmring_1_4', 'others_nostretch': 'mring_1_4'} 
 stride = 200 # checkpointing interval for VIDA
 stretch = True # NB: must be always set to True for M87!!!
 restart = False
@@ -36,7 +37,7 @@ def execute(filelist, dataset_label, template, execmode, imager):
     rex_outfile = f'{dataset_label}_REx.h5'
     vida_outfile = f'{dataset_label}_VIDA_{template}.csv'
 
-    isclean = False # isclean is always False since we are using new blurred images
+    isclean = False # isclean is always False since we use blurredcc images which have been pre-processed for difmap and difmap_geofit
 
     if execmode in ['both', 'rex']:
         info('Running REx...')
@@ -60,7 +61,10 @@ for imager in imagerlist:
                     if imager == 'Comrade': bands = bandlist
                     elif imager == 'THEMIS': bands = bandlist + themisbandlist
                     for band in bands:
-                        inputdir = os.path.join(parentdir, imager, netcal, f'{model}_{day}_{band}')
+                        if model == 'grmhd' and imager == 'THEMIS':
+                            inputdir = os.path.join(parentdir, imager, netcal, f'image_a+0.94_0060_163_0_230.e9_6.2e9_9.50325e+24_40.fits_{day}_{band}')
+                        else:
+                            inputdir = os.path.join(parentdir, imager, netcal, f'{model}_{day}_{band}')
                         if os.path.isdir(inputdir):
                             dataset_label = f'{imager}_{netcal}_{model}_{calib}_{day}_{band}'
 
@@ -82,7 +86,7 @@ for imager in imagerlist:
                                 else:
                                     execute(filelist, dataset_label, template['disk_nostretch'], execmode, imager)
                             else:
-                                execmode = 'both'
+                                execmode = 'vida'
                                 if stretch:
                                     execute(filelist, dataset_label, template['others_stretch'], execmode, imager)
                                 else:
@@ -105,7 +109,7 @@ for imager in imagerlist:
                     elif imager == 'difmap_geofit':
                         topsetfile = os.path.join(topsetparent, 'CLEAN_geofit', f'topset_{calib}_{day}_{band}.csv')
                     elif imager == 'ehtim':
-                        topsetfile = os.path.join(topsetparent, 'ehtim_new_202301', f'topset_{calib}_{day}_{band}.csv')
+                        topsetfile = os.path.join(topsetparent, 'ehtim_new_202302', f'topset_{calib}_{day}_{band}.csv')
 
                     if os.path.isfile(topsetfile):
                         df = pd.read_csv(topsetfile)
@@ -115,8 +119,10 @@ for imager in imagerlist:
 
                     # deduce dataset path and pass on to the pipeline                    
                     if imager == 'ehtim': inputdir = os.path.join(parentdir, imager, f'{model}_{day}_{calib}-{band}')
-                    elif imager == 'difmap': inputdir = os.path.join(parentdir, 'difmap_blurredcc_r2', f'{model}_{day}_{band}') # READ FROM BLURREDCC ONLY FOR VIDA! FOR REX THIS IS DONE INTERNALLY
-                    elif imager == 'difmap_geofit': inputdir = os.path.join(parentdir, 'difmap_blurredcc_r2', f'{model}_{day}_{band}_geofit')
+                    elif imager == 'difmap': inputdir = os.path.join(parentdir, 'difmap_blurredcc_r3', f'{model}_{day}_{band}')
+                    elif imager == 'difmap_geofit': inputdir = os.path.join(parentdir, 'difmap_blurredcc_r3', f'{model}_{day}_{band}_geofit')
+                    elif imager == 'smili' and model in ['grmhd', 'ecres000', 'ecres045', 'ecres090', 'ecres315']:
+                        inputdir = os.path.join(parentdir, imager, 'image_topset_hops', f'{model}_{day}_{band}')
                     else: inputdir = os.path.join(parentdir, imager, f'{model}_{day}_{band}')
 
                     # if image evaluation has been done for this particular dataset, proceed with execution; otherwise skip directory
@@ -151,7 +157,7 @@ for imager in imagerlist:
                                 else:
                                     execute(filelistname, dataset_label, template['disk_nostretch'], execmode, imager)
                             else:
-                                execmode = 'both' # ONLY FOR REDOING DIFMAP; LATER, DO THIS ONLY FOR VIDA!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                                execmode = 'both'
                                 if stretch:
                                     execute(filelistname, dataset_label, template['others_stretch'], execmode, imager)
                                 else:
