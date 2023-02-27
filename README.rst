@@ -1,4 +1,4 @@
-eht2018-idfe-pipeline
+new-idfe-pipeline
 =====================
 
 Image Domain Analysis pipeline for EHT.
