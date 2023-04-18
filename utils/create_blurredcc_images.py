@@ -73,6 +73,8 @@ for imager in imagerlist:
 
                         # load into ehtim
                         fnames = np.genfromtxt(f'{filelistname}', dtype='str')
+                        if len(fnames.shape) == 0:
+                            fnames = np.atleast_1d(fnames)
 
                         '''pool = Pool(proc)
                         imglist = list(pool.imap(partial(eh.image.load_fits, aipscc=True), fnames))
